@@ -20,18 +20,20 @@ foreach my $line (@interfaces) {
     $n=$n+1;
 }
 
-my @LAN_bond = input('Enter Interfaces numbs for create -L-AN bond:');
-my @SAN_bond = input('Enter Interfaces numbs for create *S*AN bond:');
-my @LAN_VLAN = input('-L-AN VLAD ID:');
-my @SAN_VLAN = input('*S*AN VLAN ID:');
-my $LAN_IP = input('-L-AN IP:');
-if (
+my $proceed_number_line = \&check_num_line;
+my $proceed_num = \&check_num;
+my $proceed_ip = \&check_ip;
 
-my @SAN_IP = input('*S*AN IP:');
+my @LAN_bond = input('Enter Interfaces numbs for create -L-AN bond:', $proceed_number_line);
+my @SAN_bond = input('Enter Interfaces numbs for create *S*AN bond:', $proceed_number_line);
+print "\n";
+my @LAN_VLAN = input('-L-AN VLAD ID:', $proceed_num);
+my @SAN_VLAN = input('*S*AN VLAN ID:', $proceed_num);
+print "\n";
+my @LAN_IP = input('-L-AN IP:', $proceed_ip);
+my @SAN_IP = input('*S*AN IP:', $proceed_ip);
 
-
-my @body;
-@body=();
+my @body = ();
 
 $body[0] = "#!/bin/bash\n"."nmcli con add type bond ifname mb0\n";
 
@@ -40,8 +42,8 @@ foreach my $LAN_e_num (@LAN_bond) {
     push @body, "nmcli con add type ethernet ifname $LAN_e_name master mb0\n";
 }
 {
-    my $LAN_VLAN_ID = 0+shift(@LAN_VLAN);
-    push @body, "nmcli con add type vlan id=$LAN_VLAN_ID\n";
+    my $LAN_VLAN_ID = 0+$LAN_VLAN[0];
+    push @body, "nmcli con add type vlan con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID ip4 $LAN_IP[0]/24\n";
 }
 {
     push @body, "nmcli con add type brudge ...\n";
@@ -52,11 +54,10 @@ foreach my $SAN_e_num (@SAN_bond) {
     push @body, "nmcli con add type ethernet ifname $SAN_e_name master mb0\n";
 }
 {
-    my $SAN_VLAN_ID = 0+shift(@SAN_VLAN);
-    push @body, "nmcli con add type vlan id=$SAN_VLAN_ID\n";
+    my $SAN_VLAN_ID = 0+$SAN_VLAN[0];
+    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ip4 $SAN_IP[0]/24\n";
 }
 push @body, "systemctl restart NetworkManager.service\n";
-
 
 open my $fh, ">", 'create-matryoshka.sh' or die "Can't write to file 'create-matryoshka.sh'";
 print $fh "@body\n";
@@ -67,7 +68,6 @@ print "\n";
 
 exit(0);
 
-
 sub get_con_name {
     my ($n) = @_;
     my @columns = split " ", $interfaces[$n];
@@ -75,7 +75,7 @@ sub get_con_name {
 }
 
 sub input {
-    my ($prompt) = @_;
+    my ($prompt, $checker) = @_;
     my $for_bond_ref;
 
     while (1) {
@@ -84,16 +84,15 @@ sub input {
 
         while(!defined($intfs = <STDIN>)) {};
 
-        (my $is_good, $for_bond_ref) = check_line($intfs);
+        (my $is_good, $for_bond_ref) = $checker -> ($intfs);
         last if $is_good == 1;
     }
 
     return @{$for_bond_ref};
 }
 
-sub check_line {
+sub check_num_line {
     my ($line) = @_;
-
     chomp $line;
 
     my @lines = split " |,", $line;
@@ -109,4 +108,32 @@ sub check_line {
     }
 
     return ($good, \@lines);
+}
+
+sub check_num {
+    my ($line) = @_;
+    chomp $line;
+
+    my $good = looks_like_number($line) ? 1 : 0;
+    if (!$good) {
+        print 'Available only single Number!'; print "\n";
+    }
+
+    my @lines = ($line);
+
+    return $good, \@lines;
+}
+
+sub check_ip {
+    my ($line) = @_;
+    chomp $line;
+
+    my $good = $line =~ /(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)/ ? 1 : 0;
+    if (!$good) {
+        print 'Available only correct IP address!'; print "\n";
+    }
+
+    my @lines = ($line);
+
+    return $good, \@lines;
 }

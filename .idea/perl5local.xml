@@ -59,28 +59,19 @@
         <entry key="/usr/lib/perl5/5.36/core_perl/auto/re/re.so" value="1653814174000" />
         <entry key="/usr/lib/perl5/5.36/core_perl/auto/threads/shared/shared.so" value="1653814174000" />
         <entry key="/usr/lib/perl5/5.36/core_perl/auto/threads/threads.so" value="1653814174000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Class/XSAccessor/XSAccessor.so" value="1666712956000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Clone/Clone.so" value="1653816790000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/DBD/SQLite/SQLite.so" value="1653822706000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/DBI/DBI.so" value="1653819634000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/HTML/Parser/Parser.so" value="1653823263000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/IO/Tty/Tty.so" value="1653816909000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Image/Magick/Q16HDRI/Q16HDRI.so" value="1664053664000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/JSON/XS/XS.so" value="1653822436000" />
+        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/HTML/Parser/Parser.so" value="1665967743000" />
+        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Image/Magick/Q16HDRI/Q16HDRI.so" value="1665951606000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/LibAppArmor/LibAppArmor.so" value="1661696575000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/List/MoreUtils/XS/XS.so" value="1653816320000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Net/Libproxy/Libproxy.so" value="1655850171000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Net/SSLeay/SSLeay.so" value="1663625482000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/NetSNMP/ASN/ASN.so" value="1653820231000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/NetSNMP/OID/OID.so" value="1653820231000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/NetSNMP/TrapReceiver/TrapReceiver.so" value="1653820231000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/NetSNMP/agent/agent.so" value="1653820231000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/NetSNMP/agent/default_store/default_store.so" value="1653820231000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/NetSNMP/default_store/default_store.so" value="1653820231000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/PadWalker/PadWalker.so" value="1653816433000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Params/Util/Util.so" value="1653816661000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/SNMP/SNMP.so" value="1653820231000" />
-        <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Term/ReadLine/Gnu/Gnu.so" value="1653817041000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/XML/LibXML/LibXML.so" value="1664785731000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/XML/Parser/Expat/Expat.so" value="1653823378000" />
       </map>
