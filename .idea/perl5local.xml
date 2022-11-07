@@ -59,6 +59,10 @@
         <entry key="/usr/lib/perl5/5.36/core_perl/auto/re/re.so" value="1653814174000" />
         <entry key="/usr/lib/perl5/5.36/core_perl/auto/threads/shared/shared.so" value="1653814174000" />
         <entry key="/usr/lib/perl5/5.36/core_perl/auto/threads/threads.so" value="1653814174000" />
+        <entry key="/usr/lib/perl5/5.36/site_perl/auto/Hash/StoredIterator/StoredIterator.so" value="1667583464000" />
+        <entry key="/usr/lib/perl5/5.36/site_perl/auto/JSON/XS/XS.so" value="1667583475000" />
+        <entry key="/usr/lib/perl5/5.36/site_perl/auto/PadWalker/PadWalker.so" value="1667583479000" />
+        <entry key="/usr/lib/perl5/5.36/site_perl/auto/Unicode/LineBreak/LineBreak.so" value="1667583435000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/Clone/Clone.so" value="1653816790000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/DBI/DBI.so" value="1653819634000" />
         <entry key="/usr/lib/perl5/5.36/vendor_perl/auto/HTML/Parser/Parser.so" value="1665967743000" />

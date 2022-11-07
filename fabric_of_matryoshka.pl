@@ -43,10 +43,12 @@ foreach my $LAN_e_num (@LAN_bond) {
 }
 {
     my $LAN_VLAN_ID = 0+$LAN_VLAN[0];
-    push @body, "nmcli con add type vlan con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID ip4 $LAN_IP[0]/24\n";
+    push @body, "nmcli con add type vlan con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID\n";
 }
 {
     push @body, "nmcli con add type brudge ...\n";
+
+    push @body, "\n";
 }
 
 foreach my $SAN_e_num (@SAN_bond) {
@@ -55,7 +57,10 @@ foreach my $SAN_e_num (@SAN_bond) {
 }
 {
     my $SAN_VLAN_ID = 0+$SAN_VLAN[0];
-    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ip4 $SAN_IP[0]/24\n";
+    my $SAN_VLAN_GW = $SAN_IP[0]; # replace last octet
+    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ip4 $SAN_IP[0]/24 gw4 $SAN_VLAN_GW\n";
+
+    push @body, "\n";
 }
 push @body, "systemctl restart NetworkManager.service\n";
 

@@ -1081,6 +1081,11 @@ sub utf8_mode;
 sub xml_mode;
 sub xml_pic;
 }
+package Hash::StoredIterator {
+sub hash_get_iterator;
+sub hash_init_iterator;
+sub hash_set_iterator;
+}
 package Hash::Util {
 sub _clear_placeholders(\%) ;
 sub all_keys(\%\@\@) ;
@@ -1653,6 +1658,56 @@ sub SvREFCNT(\[$%@];$) ;
 sub V;
 sub hv_clear_placeholders(\%) ;
 }
+package JSON::XS {
+sub CLONE;
+sub DESTROY;
+sub allow_blessed;
+sub allow_nonref;
+sub allow_tags;
+sub allow_unknown;
+sub ascii;
+sub boolean_values;
+sub canonical;
+sub convert_blessed;
+sub decode;
+sub decode_json($) ;
+sub decode_prefix;
+sub encode;
+sub encode_json($) ;
+sub filter_json_object;
+sub filter_json_single_key_object;
+sub get_allow_blessed;
+sub get_allow_nonref;
+sub get_allow_tags;
+sub get_allow_unknown;
+sub get_ascii;
+sub get_boolean_values;
+sub get_canonical;
+sub get_convert_blessed;
+sub get_indent;
+sub get_latin1;
+sub get_max_depth;
+sub get_max_size;
+sub get_relaxed;
+sub get_shrink;
+sub get_space_after;
+sub get_space_before;
+sub get_utf8;
+sub incr_parse;
+sub incr_reset;
+sub incr_skip;
+sub indent;
+sub latin1;
+sub max_depth;
+sub max_size;
+sub new;
+sub pretty;
+sub relaxed;
+sub shrink;
+sub space_after;
+sub space_before;
+sub utf8;
+}
 package LibAppArmor {
 sub _aa_is_blacklisted;
 sub aa_change_hat;
@@ -1925,6 +1980,9 @@ sub decoded_base64_length($) ;
 sub encode($;$) ;
 sub encode_base64($;$) ;
 sub encoded_base64_length($;$) ;
+}
+package MIME::Charset {
+sub is_utf8($;$) ;
 }
 package MIME::QuotedPrint {
 sub decode_qp($) ;
@@ -2670,6 +2728,15 @@ sub setlflag;
 sub setoflag;
 sub setospeed;
 }
+package PadWalker {
+sub _upcontext;
+sub closed_over;
+sub peek_my;
+sub peek_our;
+sub peek_sub;
+sub set_closed_over;
+sub var_name;
+}
 package PerlIO {
 sub get_layers(*;@) ;
 }
@@ -3199,6 +3266,53 @@ sub getHST;
 sub mk_SortKey;
 sub varCE;
 sub visualizeSortKey;
+}
+package Unicode::GCString {
+sub DESTROY($) ;
+sub _new($$;$) ;
+sub as_array($) ;
+sub as_scalarref;
+sub as_string($;$;$) ;
+sub chars($) ;
+sub cmp($$;$) ;
+sub columns;
+sub concat($$;$) ;
+sub copy($) ;
+sub eos;
+sub flag($;$;$) ;
+sub item($;$) ;
+sub join;
+sub lbc($) ;
+sub lbcext($) ;
+sub lbclass($;$) ;
+sub lbclass_ext($;$) ;
+sub length($) ;
+sub next($;$;$) ;
+sub pos($;$) ;
+sub substr($$;$;$) ;
+}
+package Unicode::LineBreak {
+sub DESTROY($) ;
+sub EAWidths;
+sub LBClasses;
+sub SOMBOK_VERSION;
+sub UNICODE_VERSION;
+sub _config;
+sub _new($) ;
+sub as_hashref;
+sub as_scalarref;
+sub as_string;
+sub break($$) ;
+sub break_partial($$) ;
+sub breakingRule($$$) ;
+sub copy($) ;
+sub is_utf8($;$) ;
+sub lbrule($$$) ;
+sub reset($) ;
+sub strsize($$$$$;$) ;
+}
+package Unicode::LineBreak::SouthEastAsian {
+sub supported() ;
 }
 package Unicode::Normalize {
 sub FCC($) ;
