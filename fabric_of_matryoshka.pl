@@ -6,17 +6,17 @@ use Scalar::Util qw(looks_like_number);
 use Data::Dumper;
 
 print "Remove old try....\n";
-my @old_intf=`nmcli con sh | awk '/?m0./ {print \$2}'`;
+my @old_intf=`nmcli con sh | awk '/?b0\./ {print \$2}'`;
 foreach my $old (@old_intf) {
     print $old;
     `nmcli con delete $old`;
 }
 
-my @interfaces=`nmcli con sh | awk '/^.+/ {print \$0}'`;
-my $n = 0;
+my @interfaces=`nmcli con sh | awk '/ ethernet / {print \$0}'`;
 #
+my $n = 0;
 foreach my $line (@interfaces) {
-    print $n == 0? '   ': $n.'. ', $line;
+    print $line;
     $n=$n+1;
 }
 
