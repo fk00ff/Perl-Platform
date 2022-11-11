@@ -6,17 +6,18 @@ use Scalar::Util qw(looks_like_number);
 use Data::Dumper;
 
 print "Remove old try....\n";
+print "Ethernet connection list:\n";
 my @old_intf=`nmcli con sh | awk '/?b0\./ {print \$2}'`;
 foreach my $old (@old_intf) {
     print $old;
     `nmcli con delete $old`;
 }
 
-my @interfaces=`nmcli con sh | awk '/ ethernet / {print \$0}'`;
+my @interfaces=`nmcli con sh | awk '/ ethernet |UUID/ {print \$0}'`;
 #
-my $n = 0;
+my $n=0;
 foreach my $line (@interfaces) {
-    print $line;
+    print $n == 0? '   ': $n.'. ', $line;
     $n=$n+1;
 }
 
@@ -24,6 +25,7 @@ my $proceed_number_line = \&check_num_line;
 my $proceed_num = \&check_num;
 my $proceed_ip = \&check_ip;
 
+print "\n";
 my @LAN_bond = input('Enter Interfaces numbs for create -L-AN bond:', $proceed_number_line);
 my @SAN_bond = input('Enter Interfaces numbs for create *S*AN bond:', $proceed_number_line);
 print "\n";
@@ -35,18 +37,21 @@ my @SAN_IP = input('*S*AN IP:', $proceed_ip);
 
 my @body = ();
 
-$body[0] = "#!/bin/bash\n"."nmcli con add type bond ifname mb0\n";
-
+#create BOND
+$body[0] = "#!/bin/bash\n"."nmcli con add type bond ifname mb0 bond.options \"mode=802.3ad\" ipv4.method=disabled ipv6.method=ignore\n";
+#
+#create ETHERNET connections for interfaces
 foreach my $LAN_e_num (@LAN_bond) {
     my $LAN_e_name = get_con_name(0+$LAN_e_num);
-    push @body, "nmcli con add type ethernet ifname $LAN_e_name master mb0\n";
+    push @body, "nmcli con add type ethernet slave-type bond ifname $LAN_e_name master mb0 ipv4.method=disabled ipv6.method=ignore\n";
 }
+#create BRIDGE
+#create VLAN over BOND
 {
     my $LAN_VLAN_ID = 0+$LAN_VLAN[0];
-    push @body, "nmcli con add type vlan con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID\n";
-}
-{
-    push @body, "nmcli con add type brudge ...\n";
+
+    push @body, "nmcli con add type bridge ifname br-mb0.$LAN_VLAN_ID ipv4.method=manual ipv6.method=ignore ipv4.addresses=$LAN_IP[0] \n";
+    push @body, "nmcli con add type vlan con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID ipv4.method=disabled ipv6.method=ignore\n";
 
     push @body, "\n";
 }
@@ -133,12 +138,17 @@ sub check_ip {
     my ($line) = @_;
     chomp $line;
 
-    my $good = $line =~ /(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)/ ? 1 : 0;
+    my $mask = '^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$';
+
+    my $good = $line =~ m/$mask/ ? 1 : 0;
     if (!$good) {
         print 'Available only correct IP address!'; print "\n";
     }
 
-    my @lines = ($line);
+    my $gw = $line;
+    $gw =~ s/$mask/$1.254/;
+
+    my @lines = ($line,  $gw);
 
     return $good, \@lines;
 }
