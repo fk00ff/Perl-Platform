@@ -6,17 +6,17 @@ use Scalar::Util qw(looks_like_number);
 use Data::Dumper;
 
 print "Remove old try....\n";
-print "Ethernet connection list:\n";
 my @old_intf=`nmcli con sh | awk '/?b0\./ {print \$2}'`;
-foreach my $old (@old_intf) {
+for my $old (@old_intf) {
     print $old;
     `nmcli con delete $old`;
 }
 
+print "Ethernet connection list:\n";
 my @interfaces=`nmcli con sh | awk '/ ethernet |UUID/ {print \$0}'`;
 #
 my $n=0;
-foreach my $line (@interfaces) {
+for my $line (@interfaces) {
     print $n == 0? '   ': $n.'. ', $line;
     $n=$n+1;
 }
@@ -38,42 +38,68 @@ my @SAN_IP = input('*S*AN IP:', $proceed_ip);
 my @body = ();
 
 #create BOND
-$body[0] = "#!/bin/bash\n"."nmcli con add type bond ifname mb0 bond.options \"mode=802.3ad\" ipv4.method=disabled ipv6.method=ignore\n";
+$body[0] = "#!/bin/bash\n"."echo .create Bond -L-AN\n";
+push @body, "nmcli con add type bond con-name mb0 ifname mb0 bond.options \"mode=802.3ad\" ipv4.method disabled ipv6.method ignore";
 #
 #create ETHERNET connections for interfaces
-foreach my $LAN_e_num (@LAN_bond) {
+push @body, "echo .create Bond-Slave";
+for my $LAN_e_num (@LAN_bond) {
     my $LAN_e_name = get_con_name(0+$LAN_e_num);
-    push @body, "nmcli con add type ethernet slave-type bond ifname $LAN_e_name master mb0 ipv4.method=disabled ipv6.method=ignore\n";
+    push @body, "nmcli con add type ethernet slave-type bond master mb0 con-name mb0.$LAN_e_name ifname $LAN_e_name";
 }
 #create BRIDGE
 #create VLAN over BOND
 {
     my $LAN_VLAN_ID = 0+$LAN_VLAN[0];
 
-    push @body, "nmcli con add type bridge ifname br-mb0.$LAN_VLAN_ID ipv4.method=manual ipv6.method=ignore ipv4.addresses=$LAN_IP[0] \n";
-    push @body, "nmcli con add type vlan con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID ipv4.method=disabled ipv6.method=ignore\n";
+    push @body, "\necho .create Bridge";
+    push @body, "nmcli con add type bridge con-name br-mb0.$LAN_VLAN_ID ifname br-mb0.$LAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $LAN_IP[0]/24 ipv4.gateway $LAN_IP[1]";
+    push @body, "echo .create VLAN-br-Slave";
+    push @body, "nmcli con add type vlan slave-type bridge master br-mb0.$LAN_VLAN_ID con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID ipv4.method disabled ipv6.method ignore";
 
-    push @body, "\n";
+    push @body, "\necho .activate -L-AN connections";
+    push @body, "nmcli con up mb0";
+    push @body, "nmcli con up mb0.$LAN_VLAN_ID";
+    push @body, "nmcli con up br-mb0.$LAN_VLAN_ID";
+
+    push @body, "";
 }
 
-foreach my $SAN_e_num (@SAN_bond) {
+
+push @body, "echo .create Bond *S*AN\n";
+push @body, "nmcli con add type bond con-name sb0 ifname sb0 bond.options \"mode=802.3ad,miimon=1,downdelay=0,updelay=0\" ipv4.method disabled ipv6.method ignore";
+#
+#create ETHERNET connections for interfaces
+push @body, "echo .create Bond-Slave";
+for my $SAN_e_num (@SAN_bond) {
     my $SAN_e_name = get_con_name(0+$SAN_e_num);
-    push @body, "nmcli con add type ethernet ifname $SAN_e_name master mb0\n";
+    push @body, "nmcli con add type ethernet slave-type bond master sb0 con-name sb0.$SAN_e_name ifname $SAN_e_name";
 }
 {
     my $SAN_VLAN_ID = 0+$SAN_VLAN[0];
-    my $SAN_VLAN_GW = $SAN_IP[0]; # replace last octet
-    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ip4 $SAN_IP[0]/24 gw4 $SAN_VLAN_GW\n";
 
-    push @body, "\n";
+    push @body, "echo .create VLAN";
+    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $SAN_IP[0]/24 ipv4.gateway $SAN_IP[1]";
+
+    push @body, "\necho .activate *S*AN connections";
+    push @body, "nmcli con up sb0";
+    push @body, "nmcli con up sb0.$SAN_VLAN_ID";
+
+    push @body, "";
 }
-push @body, "systemctl restart NetworkManager.service\n";
+push @body, "\necho .restart NM service";
+push @body, "systemctl restart NetworkManager.service";
 
-open my $fh, ">", 'create-matryoshka.sh' or die "Can't write to file 'create-matryoshka.sh'";
-print $fh "@body\n";
+my $m_name = '/root/create-matryoshka';
+open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
+for my $str (@body) {
+    print $fh "$str\n";
+}
 close $fh;
 
-print "Use:\nchmod +x create-matryoshka.sh\n./create-matryoshka.sh\n";
+`chmod +x $m_name`;
+
+print "Use:\n$m_name\n";
 print "\n";
 
 exit(0);
@@ -110,8 +136,8 @@ sub check_num_line {
 
     CHECK:
     for my $intf (@lines) {
-        if ( !looks_like_number($intf) ) {
-            print 'Available only Numbers separated by " " or ","!'; print("\n");
+        if ( !looks_like_number($intf) || $intf >= (0+@interfaces) ) {
+            print 'Available only Numbers separated by " " or ","! And no more than interfaces count.'; print("\n");
             $good=0;
             last CHECK;
         }
