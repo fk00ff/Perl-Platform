@@ -4,36 +4,52 @@ use warnings FATAL => 'all';
 
 use Data::Dumper;
 
+my @body = ("#!/bin/bash\n");
 my $filter ='';
-print "Remove installation artefact bridges....\n";
-$filter = q[awk '/^Bridge br[0-9]+/ {print $1,$2,$3}'];
-my @br_intf=`nmcli con sh | $filter`;
-for my $old (@br_intf) {
-    my @o = split " ",$old;
-    print " - $o[0] $o[1] ..... ";
-    print `nmcli con delete $o[2]`;
-    print "\n";
-}
 
-print "Remove old try....\n";
+push @body, "echo .remove old try ....";
 $filter = q[awk '/(^|br-)[sm]b0(\.| )/ {print $1,$2}'];
 my @old_intf=`nmcli con sh | $filter`;
 for my $old (@old_intf) {
     my @o = split " ", $old;
-    print " - $o[0] .... ";
-    print `nmcli con delete $o[1]`;
-    print "\n";
+    push @body, "echo - $o[0]";
+    push @body, "nmcli con delete $o[1]";
 }
 
+push @body, "echo .remove installation artefacts ....";
+my @art_intf=`nmcli con sh`;
+shift @art_intf;
+for my $old (@art_intf) {
+    my @o = split " ",$old;
+
+    my $name;
+    my $id;
+
+    for my $s (@o) {
+        if (length($s) == 36) {
+            $id = $s;
+            last;
+        }
+        $name .= ' '.$s;
+
+    }
+
+    push @body, "echo - $o[-2]: $name";
+    push @body, "nmcli con delete $id";
+}
+push @body, "";
+
 print "Ethernet connection list:\n";
-$filter = q[awk '/ ethernet |UUID/ {print $0}'];
-my @interfaces=`nmcli con sh | $filter`;
+$filter = q[ grep -A1 -e "^[0-9]: " | grep -A1 "state UP" | awk '{print $2}' | awk '{getline a;print $0" "a}' | awk -F": " '{print $1"\t\t"$2}'];
+my @interfaces = `ip l | $filter`;
+unshift @interfaces, "NAME\t\t\tMAC\n";
 #
 my $n=0;
 for my $line (@interfaces) {
     print $n == 0? '   ': $n.'. ', $line;
     $n=$n+1;
 }
+print "\n";
 
 my $proceed_number_line = \&check_num_line;
 my $proceed_num = \&check_num;
@@ -41,7 +57,6 @@ my $proceed_ip = \&check_ip;
 my $proceed_name = \&check_name;
 my $proceed_gw = \&check_gw;
 
-print "\n";
 my @LAN_VLAN = input('-L-AN VLAD ID:', $proceed_num);
 my @LAN_GW_8 = input('-LAN- gateway last octet [254]:', $proceed_gw);
 my @LAN_IP = input('-L-AN IP:', $proceed_ip);
@@ -56,9 +71,8 @@ my @DNS_DOMAIN = input('Search Domain:', $proceed_name);
 print "\n";
 my @HOST_NAME = input("Aaand this Host name:", $proceed_name);
 
-my @body = ("#!/bin/bash\n");
 #create BOND
-push @body, "echo .create Bond -L-AN\n";
+push @body, "echo .create Bond -L-AN";
 push @body, "nmcli con add type bond con-name mb0 ifname mb0 bond.options \"mode=802.3ad,miimon=1,downdelay=0,updelay=0\" ipv4.method disabled ipv6.method ignore";
 #
 #create ETHERNET connections for interfaces
@@ -85,7 +99,7 @@ for my $LAN_e_num (@LAN_bond) {
     push @body, "";
 }
 
-push @body, "echo .create Bond *S*AN\n";
+push @body, "echo .create Bond *S*AN";
 push @body, "nmcli con add type bond con-name sb0 ifname sb0 bond.options \"mode=802.3ad,miimon=1,downdelay=0,updelay=0\" ipv4.method disabled ipv6.method ignore";
 #
 #create ETHERNET connections for interfaces
@@ -97,7 +111,7 @@ for my $SAN_e_num (@SAN_bond) {
 {
     my $SAN_VLAN_ID = 0+$SAN_VLAN[0];
 
-    push @body, "echo .create VLAN";
+    push @body, "\necho .create VLAN";
     push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $SAN_IP[0]/24";
 
     push @body, "\necho .activate *S*AN connections";
@@ -116,7 +130,8 @@ push @body, "";
 push @body, "ip -c -br a";
 push @body, "";
 
-my $m_name = '/root/create-matryoshka';
+chomp(my $m_name = `echo \$HOME`);
+$m_name .= '/create-matryoshka';
 open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
 for my $str (@body) {
     print $fh "$str\n";
