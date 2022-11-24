@@ -4,6 +4,7 @@ use warnings FATAL => 'all';
 
 use Data::Dumper;
 
+chomp(my $home_path = `echo \$HOME`);
 my @body = ("#!/bin/bash\n");
 my $filter ='';
 
@@ -56,6 +57,7 @@ my $proceed_num = \&check_num;
 my $proceed_ip = \&check_ip;
 my $proceed_name = \&check_name;
 my $proceed_gw = \&check_gw;
+my $proceed_yn = \&check_yN;
 
 my @LAN_VLAN = input('-L-AN VLAD ID:', $proceed_num);
 my @LAN_GW_8 = input('-LAN- gateway last octet [254]:', $proceed_gw);
@@ -66,10 +68,26 @@ my @SAN_VLAN = input('*S*AN VLAN ID:', $proceed_num);
 my @SAN_IP = input('*S*AN IP:', $proceed_ip);
 my @SAN_bond = input('Enter Interfaces numbs for create *S*AN bond:', $proceed_number_line);
 print "\n";
+my @COPY_NTP = input('Use external(existed) NTP server [yN]:', $proceed_yn);
+my @NTP_IP = input('NTP IP:', $proceed_ip);
+print "\n";
 my @DNS_IP = input('DNS IP:', $proceed_ip);
 my @DNS_DOMAIN = input('Search Domain:', $proceed_name);
 print "\n";
 my @HOST_NAME = input("Aaand this Host name:", $proceed_name);
+
+print "save answers ....\n";
+my $ans_name = $home_path . '/used-addresses';
+{
+    open my $fh, ">", $ans_name or die "Can't write to file '$ans_name'";
+    print $fh "VLAN=$LAN_VLAN[0]\n";
+    print $fh "IP=$LAN_IP[0]\n";
+    print $fh "GW=$LAN_IP[1]\n";
+    print $fh "DNS=$DNS_IP[0]\n";
+    print $fh "EXT-NTP=$COPY_NTP[0]\n";
+    print $fh "NTP=$NTP_IP[0]\n";
+    close $fh;
+}
 
 #create BOND
 push @body, "echo .create Bond -L-AN";
@@ -130,13 +148,14 @@ push @body, "";
 push @body, "ip -c -br a";
 push @body, "";
 
-chomp(my $m_name = `echo \$HOME`);
-$m_name .= '/create-matryoshka';
-open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
-for my $str (@body) {
-    print $fh "$str\n";
+my $m_name = $home_path.'/create-matryoshka';
+{
+    open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
+    for my $str (@body) {
+        print $fh "$str\n";
+    }
+    close $fh;
 }
-close $fh;
 
 `chmod +x $m_name`;
 
@@ -223,7 +242,7 @@ sub check_gw {
     my ($octet) = @_;
 
     my $good = 1;
-    my @lines = ($octet =~ m/^\d{1,2}$/ ? $octet : 254);
+    my @lines = ($octet =~ m/^\d{1,3}$/ ? $octet : 254);
 
     return $good, \@lines;
 }
@@ -237,6 +256,15 @@ sub check_name {
     }
 
     my @lines = ($line);
+
+    return $good, \@lines;
+}
+
+sub check_yN {
+    my ($yn) = @_;
+
+    my $good = 1;
+    my @lines = ($yn =~ m/^[yY]$/ ? 'Y' : 'N');
 
     return $good, \@lines;
 }
