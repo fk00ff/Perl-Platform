@@ -55,7 +55,7 @@ push @body, "";
 if ($ips{'EXT-NTP'} eq 'N') {
     register_VM('/sitronics/srv-ntp', 'srv-ntp.tar.gz', 'NTP');
 
-
+    push @body, "xxd -p harddisk.hdd | sed "s/seed-001/repl-001/" | xxd -p -r > harddisk.hdd"
 
     #IP="999.888.777.001"
     #GATEWAY="999.888.777.002"

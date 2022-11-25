@@ -71,6 +71,9 @@ print "\n";
 my @COPY_NTP = input('Use external(existed) NTP server [yN]:', $proceed_yn);
 my @NTP_IP = input('NTP IP:', $proceed_ip);
 print "\n";
+my @COPY_SMB = input('Use external(existed) SMB/CIFS server [yN]:', $proceed_yn);
+my @SMB_IP = input('SMB IP:', $proceed_ip);
+print "\n";
 my @DNS_IP = input('DNS IP:', $proceed_ip);
 my @DNS_DOMAIN = input('Search Domain:', $proceed_name);
 print "\n";
@@ -86,6 +89,9 @@ my $ans_name = $home_path . '/used-addresses';
     print $fh "DNS=$DNS_IP[0]\n";
     print $fh "EXT-NTP=$COPY_NTP[0]\n";
     print $fh "NTP=$NTP_IP[0]\n";
+    print $fh "EXT-SMB=$COPY_SMB[0]\n";
+    print $fh "SMB=$SMB_IP[0]\n";
+
     close $fh;
 }
 
