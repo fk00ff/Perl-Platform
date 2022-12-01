@@ -41,8 +41,8 @@ for my $old (@art_intf) {
 push @body, "";
 
 print "Ethernet connection list:\n";
-$filter = q[ grep -A1 -e "^[0-9]: " | grep -A1 "state UP" | awk '{print $2}' | awk '{getline a;print $0" "a}' | awk -F": " '{print $1"\t\t"$2}'];
-my @interfaces = `ip l | $filter`;
+$filter = q[ grep " UP " | awk '{print $1"\t\t"$3}'];
+my @interfaces = `ip -br l | $filter`;
 unshift @interfaces, "NAME\t\t\tMAC\n";
 #
 my $n=0;
@@ -79,7 +79,7 @@ my @DNS_DOMAIN = input('Search Domain:', $proceed_name);
 print "\n";
 my @HOST_NAME = input("Aaand this Host name:", $proceed_name);
 
-print "save answers ....\n";
+print "\nsave answers ....\n";
 my $ans_name = $home_path . '/used-addresses';
 {
     open my $fh, ">", $ans_name or die "Can't write to file '$ans_name'";
