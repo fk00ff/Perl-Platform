@@ -158,6 +158,7 @@ sub kill_0a {
 sub register_VM {
     my ($path, $name, $desc) = @_;
 
+    push @body, "";
     push @body, "echo .copy $desc server ....";
     push @body, "mkdir -p $path ; chmod -R 700 $path ; chown -R root:root $path";
     push @body, "rsync --progress $pwd/$name $path/";
