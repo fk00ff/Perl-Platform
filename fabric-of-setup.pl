@@ -62,8 +62,8 @@ push @body, "";
 
 push @body, "echo .set NTP server for host";
 push @body, "cp /etc/chrony.conf /etc/chrony.conf.bak";
-push @body, qq[sed -e "s/^\(server\)/#\\1/" -i /etc/chrony.conf];
-push @body, qq[sed -e "0,/#server/ s/^\(#server \)/server $ips{'NTP'}\\n\\1/" etc/chrony.conf];
+push @body, qq[sed -e "s/^\\(server \)/#\\1/" -i /etc/chrony.conf];
+push @body, qq[sed -e "0,/#server/ s/^\\(#server \\)/server $ips{'NTP'}\\n\\1/" /etc/chrony.conf];
 push @body, "systemctl restart chronyd";
 push @body, "echo Use:";
 push @body, "echo   chronyc sources -v";
@@ -103,7 +103,7 @@ if ($is_control_host == 1) {
     if ($ips{'EXT-NTP'} eq 'N') {
         register_VM('/sitronics/srv-ntp', 'srv-ntp.tar.gz', 'NTP');
         push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd ];
-	push @body, "prlctl start srv-ntp";
+	    push @body, "prlctl start srv-ntp";
         push @body, "";
     }
 
@@ -150,7 +150,7 @@ sub register_VM {
     my ($path, $name, $desc) = @_;
 
     push @body, "echo .copy $desc server ....";
-    push @body, "mkdir $path ; chmod -R 700 $path ; chown -R root:root $path";
+    push @body, "mkdir -p $path ; chmod -R 700 $path ; chown -R root:root $path";
     push @body, "rsync --progress $pwd/$name $path/";
     push @body, "";
 
