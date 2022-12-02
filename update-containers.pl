@@ -8,10 +8,10 @@ chomp(my $pwd = `pwd`);
 {
     my $t_name = $pwd."/kjenvjkeneknffefjveee";
     my $rez = ( open my $fh, ">", $t_name );
-    if ($rez == 1) {
+    if (defined($rez) && ($rez == 1)) {
         `rm -f $t_name`;
         print "Run script from mounted-cdrom-folder, please!\n";
-        # exit(-1);
+        exit(-1);
     }
     close $fh;
 }
