@@ -11,7 +11,7 @@ chomp(my $pwd = `pwd`);
     if (defined($rez) && ($rez == 1)) {
         `rm -f $t_name`;
         print "Run script from mounted-cdrom-folder, please!\n";
-        # exit(-1);
+        exit(-1);
     }
     close $fh;
 }
@@ -20,7 +20,7 @@ chomp(my $home_path = `echo \$HOME`);
 my @body = ("#!/bin/bash\n");
 my $filter ='';
 my $core_net = 'core-network';
-my $is_control_host = 1;
+my $is_control_host = 0;
 
 print "Load addresses ....\n";
 my $ans_name = $home_path . '/used-addresses';
