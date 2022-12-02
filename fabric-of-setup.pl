@@ -65,6 +65,8 @@ push @body, "cp /etc/chrony.conf /etc/chrony.conf.bak";
 push @body, qq[sed -e "s/^\(server\)/#\\1/" -i /etc/chrony.conf];
 push @body, qq[sed -e "0,/#server/ s/^\(#server \)/server $ips{'NTP'}\\n\\1/" etc/chrony.conf];
 push @body, "systemctl restart chronyd";
+push @body, "echo Use:";
+push @body, "echo   chronyc sources -v";
 push @body, "";
 
 if ($is_control_host == 1) {
