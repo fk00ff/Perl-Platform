@@ -11,7 +11,7 @@ chomp(my $pwd = `pwd`);
     if (defined($rez) && ($rez == 1)) {
         `rm -f $t_name`;
         print "Run script from mounted-cdrom-folder, please!\n";
-        exit(-1);
+        # exit(-1);
     }
     close $fh;
 }
@@ -62,11 +62,11 @@ push @body, "";
 
 push @body, "echo .set NTP server for host";
 push @body, "cp /etc/chrony.conf /etc/chrony.conf.bak";
-push @body, qq[sed -e "s/^\\(server \)/#\\1/" -i /etc/chrony.conf];
-push @body, qq[sed -e "0,/#server/ s/^\\(#server \\)/server $ips{'NTP'}\\n\\1/" /etc/chrony.conf];
+push @body, qq[sed -e "s/^\\(server \\)/#\\1/" -i /etc/chrony.conf];
+push @body, qq[sed -e "0,/#server/ s/^\\(#server \\)/server $ips{'NTP'}\\n\\1/" -i /etc/chrony.conf];
 push @body, "systemctl restart chronyd";
 push @body, "echo Use:";
-push @body, "echo   chronyc sources -v";
+push @body, "echo .  chronyc sources -v";
 push @body, "";
 
 if ($is_control_host == 1) {
@@ -102,14 +102,18 @@ if ($is_control_host == 1) {
 
     if ($ips{'EXT-NTP'} eq 'N') {
         register_VM('/sitronics/srv-ntp', 'srv-ntp.tar.gz', 'NTP');
-        push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd ];
+        push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+        push @body, "rm harddisk.hdd";
+        push @body, "mv harddisk.hdd.new harddisk.hdd";
 	    push @body, "prlctl start srv-ntp";
         push @body, "";
     }
 
     if ($ips{'EXT-SMB'} eq 'N') {
         register_VM('/sitronics/srv-smb', 'srv-smb.tar.gz', 'SMB');
-        push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd ];
+        push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+        push @body, "rm harddisk.hdd";
+        push @body, "mv harddisk.hdd.new harddisk.hdd";
         push @body, "prlctl start srv-smb";
         push @body, "";
     }
@@ -136,13 +140,18 @@ exit(0);
 sub pad_ip {
     my ($ip, $prefix) = @_;
 
-    $prefix . sprintf('%-18s', '="' . $ip . '"');
+    my $ret = $prefix . sprintf('%-18s', '="' . $ip . '"');
+    $ret =~ s/[ ]/#/g;
+
+    return $ret;
 }
 
 sub kill_0a {
     my ($str) = @_;
 
     $str =~ s/^(.+)(0a)$/$1/;
+    $str =~ s/23/20/g;
+
     return $str;
 }
 
@@ -167,7 +176,7 @@ sub register_VM {
     $name = $o[-1];
 
     push @body, "echo .configure ....";
-    push @body, "prlctl set $name --device-add net";
+    #push @body, "prlctl set $name --device-add net";
     push @body, "prlctl set $name --device-set net0 --network $core_net";
     push @body, "prlctl set $name --autostart on";
     push @body, "";
