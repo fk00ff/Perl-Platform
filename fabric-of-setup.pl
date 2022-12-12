@@ -11,7 +11,7 @@ chomp(my $pwd = `pwd`);
     if (defined($rez) && ($rez == 1)) {
         `rm -f $t_name`;
         print "Run script from mounted-cdrom-folder, please!\n";
-        exit(-1);
+        # exit(-1);
     }
     close $fh;
 }
@@ -77,32 +77,32 @@ if ($is_control_host == 1) {
     #DNS_SERVER="999.888.777.003"
     #all seeds in external files
 
-    chomp(my $seed1 = `echo IP="999.888.777.001" | xxd -p`);
+    chomp(my $seed1 = `echo 'IP="999.888.777.001"' | xxd -p`);
     $seed1 = kill_0a($seed1);
-    chomp(my $seed2 = `echo GATEWAY="999.888.777.002" | xxd -p`);
+    chomp(my $seed2 = `echo 'GATEWAY="999.888.777.002"' | xxd -p`);
     $seed2 = kill_0a($seed2);
-    chomp(my $seed3 = `echo DNS_SERVER="999.888.777.003" | xxd -p`);
+    chomp(my $seed3 = `echo 'DNS_SERVER="999.888.777.003"' | xxd -p`);
     $seed3 = kill_0a($seed3);
     my ($repl1, $repl2, $repl3);
     {
         my $r;
 
         $r = &pad_ip($ips{'IP'}, 'IP');
-        chomp($repl1 = `echo $r | xxd -p`);
+        chomp($repl1 = `echo '$r' | xxd -p`);
         $repl1 = kill_0a($repl1);
 
         $r = &pad_ip($ips{'GW'}, 'GATEWAY');
-        chomp($repl2 = `echo $r | xxd -p`);
+        chomp($repl2 = `echo '$r' | xxd -p`);
         $repl2 = kill_0a($repl2);
 
         $r = &pad_ip($ips{'DNS'}, 'DNS_SERVER');
-        chomp($repl3 = `echo $r | xxd -p`);
+        chomp($repl3 = `echo '$r' | xxd -p`);
         $repl3 = kill_0a($repl3);
     }
 
     if ($ips{'EXT-NTP'} eq 'N') {
         register_VM('/sitronics/srv-ntp', 'srv-ntp.tar.gz', 'NTP');
-        push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+        push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
         push @body, "rm harddisk.hdd";
         push @body, "mv harddisk.hdd.new harddisk.hdd";
 	    push @body, "prlctl start srv-ntp";
@@ -111,14 +111,19 @@ if ($is_control_host == 1) {
 
     if ($ips{'EXT-SMB'} eq 'N') {
         register_VM('/sitronics/srv-smb', 'srv-smb.tar.gz', 'SMB');
-        push @body, qq[xxd -p harddisk.hdd | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+        push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
         push @body, "rm harddisk.hdd";
         push @body, "mv harddisk.hdd.new harddisk.hdd";
         push @body, "prlctl start srv-smb";
         push @body, "";
     }
 
+    push @body, "echo .install storage trial license";
+    push @body, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
 }
+
+push @body, "echo .install host trial licence";
+push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
 
 my $m_name = $home_path.'/setup-host';
 {
@@ -141,7 +146,7 @@ sub pad_ip {
     my ($ip, $prefix) = @_;
 
     my $ret = $prefix . sprintf('%-18s', '="' . $ip . '"');
-    $ret =~ s/[ ]/#/g;
+    # $ret =~ s/[ ]/#/g;
 
     return $ret;
 }
@@ -150,7 +155,7 @@ sub kill_0a {
     my ($str) = @_;
 
     $str =~ s/^(.+)(0a)$/$1/;
-    $str =~ s/23/20/g;
+    # $str =~ s/23/20/g;
 
     return $str;
 }
