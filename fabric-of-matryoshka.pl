@@ -111,7 +111,7 @@ for my $LAN_e_num (@LAN_bond) {
     my $LAN_VLAN_ID = 0+$LAN_VLAN[0];
 
     push @body, "\necho .create Bridge";
-    push @body, "nmcli con add type bridge con-name br-mb0.$LAN_VLAN_ID ifname br-mb0.$LAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $LAN_IP[0]/24 ipv4.gateway $LAN_IP[1] ipv4.dns $DNS_IP[0] ipv4.dns-search $DNS_DOMAIN[0]";
+    push @body, "nmcli con add type bridge con-name br-mb0.$LAN_VLAN_ID ifname br-mb0.$LAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $LAN_IP[0]/24 ipv4.gateway $LAN_IP[1] ipv4.dns $DNS_IP[0] ipv4.dns-search $DNS_DOMAIN[0] ipv4.route-metric 100";
     push @body, "echo .create VLAN-br-Slave";
     push @body, "nmcli con add type vlan slave-type bridge master br-mb0.$LAN_VLAN_ID con-name mb0.$LAN_VLAN_ID ifname mb0.$LAN_VLAN_ID dev mb0 id $LAN_VLAN_ID";
 
@@ -136,7 +136,7 @@ for my $SAN_e_num (@SAN_bond) {
     my $SAN_VLAN_ID = 0+$SAN_VLAN[0];
 
     push @body, "\necho .create VLAN";
-    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $SAN_IP[0]/24";
+    push @body, "nmcli con add type vlan con-name sb0.$SAN_VLAN_ID ifname sb0.$SAN_VLAN_ID dev sb0 id $SAN_VLAN_ID ipv4.method manual ipv6.method ignore ipv4.addresses $SAN_IP[0]/24  ipv4.route-metric 200";
 
     push @body, "\necho .activate *S*AN connections";
     push @body, "nmcli con up sb0";
