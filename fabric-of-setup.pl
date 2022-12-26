@@ -38,6 +38,10 @@ my %ips = ();
     }
 }
 
+push @body, "echo .install host trial licence";
+push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
+push @body, "";
+
 $filter = q[awk '{if ($4 == "CT") {print $1, $5}}'];
 my @sysc=`prlctl list -a | $filter`;
 
@@ -51,6 +55,10 @@ if (@sysc > 0) {
         push @body, "echo - $a[1]";
         push @body, "prlctl restart $a[0]";
     }
+    push @body, "";
+
+    push @body, "echo .install storage trial license";
+    push @body, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
     push @body, "";
 }
 
@@ -75,7 +83,6 @@ if ($is_control_host == 1) {
     #IP="999.888.777.001"
     #GATEWAY="999.888.777.002"
     #DNS_SERVER="999.888.777.003"
-    #all seeds in external files
 
     chomp(my $seed1 = `echo 'IP="999.888.777.001"' | xxd -p`);
     $seed1 = kill_0a($seed1);
@@ -87,9 +94,13 @@ if ($is_control_host == 1) {
     {
         my $r;
 
-        $r = &pad_ip($ips{'IP'}, 'IP');
-        chomp($repl1 = `echo '$r' | xxd -p`);
-        $repl1 = kill_0a($repl1);
+        $r = &pad_ip($ips{'NTP'}, 'IP');
+        chomp($repl1ntp = `echo '$r' | xxd -p`);
+        $repl1ntp = kill_0a($repl1ntp);
+
+        $r = &pad_ip($ips{'SMB'}, 'IP');
+        chomp($repl1smb = `echo '$r' | xxd -p`);
+        $repl1smb = kill_0a($repl1smb);
 
         $r = &pad_ip($ips{'GW'}, 'GATEWAY');
         chomp($repl2 = `echo '$r' | xxd -p`);
@@ -102,7 +113,7 @@ if ($is_control_host == 1) {
 
     if ($ips{'EXT-NTP'} eq 'N') {
         register_VM('/sitronics/srv-ntp', 'srv-ntp.tar.gz', 'NTP');
-        push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+        push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1ntp/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
         push @body, "rm harddisk.hdd";
         push @body, "mv harddisk.hdd.new harddisk.hdd";
 	    push @body, "prlctl start srv-ntp";
@@ -111,19 +122,13 @@ if ($is_control_host == 1) {
 
     if ($ips{'EXT-SMB'} eq 'N') {
         register_VM('/sitronics/srv-smb', 'srv-smb.tar.gz', 'SMB');
-        push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+        push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1smb/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
         push @body, "rm harddisk.hdd";
         push @body, "mv harddisk.hdd.new harddisk.hdd";
         push @body, "prlctl start srv-smb";
         push @body, "";
     }
-
-    push @body, "echo .install storage trial license";
-    push @body, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
 }
-
-push @body, "echo .install host trial licence";
-push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
 
 my $m_name = $home_path.'/setup-host';
 {
