@@ -90,7 +90,7 @@ if ($is_control_host == 1) {
     $seed2 = kill_0a($seed2);
     chomp(my $seed3 = `echo 'DNS_SERVER="999.888.777.003"' | xxd -p`);
     $seed3 = kill_0a($seed3);
-    my ($repl1, $repl2, $repl3);
+    my ($repl1ntp, $repl1smb, $repl2, $repl3);
     {
         my $r;
 
