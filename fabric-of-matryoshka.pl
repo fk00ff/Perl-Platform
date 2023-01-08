@@ -3,7 +3,7 @@ use strict;
 use warnings FATAL => 'all';
 
 use Data::Dumper;
-use Functions;
+use ext;
 
 chomp(my $home_path = `echo \$HOME`);
 my @body = ("#!/bin/bash\n");
@@ -53,32 +53,25 @@ for my $line (@interfaces) {
 }
 print "\n";
 
-my $proceed_number_line = \&check_num_line;
-my $proceed_num = \&check_num;
-my $proceed_ip = \&check_ip;
-my $proceed_name = \&check_name;
-my $proceed_gw = \&check_gw;
-my $proceed_yn = \&check_yN;
-
-my @LAN_VLAN = input('-L-AN VLAD ID:', $proceed_num);
-my @LAN_GW_8 = input('-LAN- gateway last octet [254]:', $proceed_gw);
-my @LAN_IP = input('-L-AN IP:', $proceed_ip);
-my @LAN_bond = input('Enter Interfaces numbs for create -L-AN bond:', $proceed_number_line);
+my @LAN_VLAN = ext::input('-L-AN VLAD ID:', proceed_num);
+my @LAN_GW_8 = ext::input('-LAN- gateway last octet [254]:', proceed_gw);
+my @LAN_IP = ext::input('-L-AN IP:', proceed_ip, $LAN_GW_8[0]);
+my @LAN_bond = ext::input('Enter Interfaces numbs for create -L-AN bond:', proceed_number_line, 0+@interfaces);
 print "\n";
-my @SAN_VLAN = input('*S*AN VLAN ID:', $proceed_num);
-my @SAN_IP = input('*S*AN IP:', $proceed_ip);
-my @SAN_bond = input('Enter Interfaces numbs for create *S*AN bond:', $proceed_number_line);
+my @SAN_VLAN = ext::input('*S*AN VLAN ID:', proceed_num);
+my @SAN_IP = ext::input('*S*AN IP:', proceed_ip, $LAN_GW_8[0]);
+my @SAN_bond = ext::input('Enter Interfaces numbs for create *S*AN bond:', proceed_number_line, 0+@interfaces);
 print "\n";
-my @COPY_NTP = input('Use external(existed) NTP server [yN]:', $proceed_yn);
-my @NTP_IP = input('NTP IP:', $proceed_ip);
+my @COPY_NTP = ext::input('Use external(existed) NTP server [yN]:', proceed_yn);
+my @NTP_IP = ext::input('NTP IP:', proceed_ip);
 print "\n";
-my @COPY_SMB = input('Use external(existed) SMB/CIFS server [yN]:', $proceed_yn);
-my @SMB_IP = input('SMB IP:', $proceed_ip);
+my @COPY_SMB = ext::input('Use external(existed) SMB/CIFS server [yN]:', proceed_yn);
+my @SMB_IP = ext::input('SMB IP:', proceed_ip);
 print "\n";
-my @DNS_IP = input('DNS IP:', $proceed_ip);
-my @DNS_DOMAIN = input('Search Domain:', $proceed_name);
+my @DNS_IP = ext::input('DNS IP:', proceed_ip);
+my @DNS_DOMAIN = ext::input('Search Domain:', proceed_name);
 print "\n";
-my @HOST_NAME = input("Aaand this Host name:", $proceed_name);
+my @HOST_NAME = ext::input("Aaand this Host name:", proceed_name);
 
 print "\nsave answers ....\n";
 my $ans_name = $home_path . '/used-addresses';
@@ -178,100 +171,3 @@ sub get_con_name {
     return $columns[0];
 }
 
-sub input {
-    my ($prompt, $checker) = @_;
-    my $for_bond_ref;
-
-    while (1) {
-        print $prompt;
-        my $intfs;
-
-        while(!defined($intfs = <STDIN>)) {};
-        chomp $intfs;
-
-        (my $is_good, $for_bond_ref) = $checker -> ($intfs);
-        last if $is_good == 1;
-    }
-
-    return @{$for_bond_ref};
-}
-
-sub check_num_line {
-    my ($line) = @_;
-
-    my @lines = split " |,", $line;
-    my $good = 1;
-
-    CHECK:
-    for my $intf (@lines) {
-        if ( !($intf =~ m/^\d{1,2}$/) or $intf >= (0+@interfaces) ) {
-            print 'Available only Numbers separated by " " or ","! And no more than interfaces count.'; print("\n");
-            $good=0;
-            last CHECK;
-        }
-    }
-
-    return ($good, \@lines);
-}
-
-sub check_num {
-    my ($line) = @_;
-
-    my $good = $line =~ m/^\d{1,4}$/ ? 1 : 0;
-    if (!$good) {
-        print 'Available only single Number!'; print "\n";
-    }
-
-    my @lines = ($line);
-
-    return $good, \@lines;
-}
-
-sub check_ip {
-    my ($line) = @_;
-
-    my $mask = '^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$';
-
-    my $good = $line =~ m/$mask/ ? 1 : 0;
-    if (!$good) {
-        print 'Available only correct IP address!'; print "\n";
-    }
-
-    my $gw = $line;
-    $gw =~ s/$mask/$1.$LAN_GW_8[0]/;
-
-    my @lines = ($line,  $gw);
-
-    return $good, \@lines;
-}
-
-sub check_gw {
-    my ($octet) = @_;
-
-    my $good = 1;
-    my @lines = ($octet =~ m/^\d{1,3}$/ ? $octet : 254);
-
-    return $good, \@lines;
-}
-
-sub check_name {
-    my ($line) = @_;
-
-    my $good = $line =~ m/^[a-zA-Z0-9.-]+$/ ? 1 : 0;
-    if (!$good) {
-        print 'NOT available empty value!'; print "\n";
-    }
-
-    my @lines = ($line);
-
-    return $good, \@lines;
-}
-
-sub check_yN {
-    my ($yn) = @_;
-
-    my $good = 1;
-    my @lines = ($yn =~ m/^[yY]$/ ? 'Y' : 'N');
-
-    return $good, \@lines;
-}

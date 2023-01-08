@@ -3,10 +3,10 @@ use strict;
 use warnings FATAL => 'all';
 
 use Data::Dumper;
-use Functions;
+use ext;
 
-Functions::checkOnCDROM;
-my $pwd = Functions::pwd;
+ext::checkOnCDROM;
+my $pwd = ext::pwd;
 
 my @body = ("#!/bin/bash\n");
 my $filter ='';
@@ -14,7 +14,7 @@ my $core_net = 'core-network';
 my $is_control_host = 0;
 
 chomp(my $home_path = `echo \$HOME`);
-my %ips = Functions::loadAddresses($home_path . '/used-addresses');
+my %ips = ext::loadAddresses($home_path . '/used-addresses');
 
 push @body, "echo .install host trial licence";
 push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
@@ -35,9 +35,21 @@ if (@sysc > 0) {
     }
     push @body, "";
 
-    push @body, "echo .install storage trial license";
-    push @body, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
-    push @body, "";
+    my @lic = ("#!/bin/bash\n");
+    push @lic, "echo .install storage trial license";
+    push @lic, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
+    push @lic, "";
+    #
+    my $m_name = $home_path.'/install-storage-licence.sh';
+    {
+        open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
+        for my $str (@lic) {
+            print $fh "$str\n";
+        }
+        close $fh;
+    }
+    #
+    `chmod +x $m_name`;
 }
 
 push @body, "echo .remove core virtual network ....";
@@ -93,6 +105,13 @@ if ($is_control_host == 1) {
         push @body, "prlctl start srv-smb";
         push @body, "";
     }
+
+    # register_VM('/sitronics/srv-dns', 'srv-dns.tar.gz', 'DNS');
+    # push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1smb/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+    # push @body, "rm harddisk.hdd";
+    # push @body, "mv harddisk.hdd.new harddisk.hdd";
+    # push @body, "prlctl start srv-dns";
+    # push @body, "";
 }
 
 my $m_name = $home_path.'/setup-host';
@@ -120,7 +139,7 @@ sub pad_ip {
 
 sub get_XXDs {
     my ($str) = @_;
-    chomp($x_str = `echo '$str' | xxd -p`);
+    chomp(my $x_str = `echo '$str' | xxd -p`);
 
     $x_str =~ s/^(.+)(0a)$/$1/;
 
