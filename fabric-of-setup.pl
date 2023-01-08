@@ -3,40 +3,18 @@ use strict;
 use warnings FATAL => 'all';
 
 use Data::Dumper;
+use Functions;
 
-chomp(my $pwd = `pwd`);
-{
-    my $t_name = $pwd."/kjenvjkeneknffefjveee";
-    my $rez = ( open my $fh, ">", $t_name );
-    if (defined($rez) && ($rez == 1)) {
-        `rm -f $t_name`;
-        print "Run script from mounted-cdrom-folder, please!\n";
-        # exit(-1);
-    }
-    close $fh;
-}
+Functions::checkOnCDROM;
+my $pwd = Functions::pwd;
 
-chomp(my $home_path = `echo \$HOME`);
 my @body = ("#!/bin/bash\n");
 my $filter ='';
 my $core_net = 'core-network';
 my $is_control_host = 0;
 
-print "Load addresses ....\n";
-my $ans_name = $home_path . '/used-addresses';
-my %ips = ();
-{
-    open my $fh, "<", $ans_name or die "Can't open file '$ans_name'";
-    my @ips = <$fh>;
-    close $fh;
-
-    for my $ip (@ips) {
-        chomp $ip;
-
-        my @o = split "=", $ip;
-        $ips{$o[0]}=$o[1];
-    }
-}
+chomp(my $home_path = `echo \$HOME`);
+my %ips = Functions::loadAddresses($home_path . '/used-addresses');
 
 push @body, "echo .install host trial licence";
 push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
@@ -84,31 +62,18 @@ if ($is_control_host == 1) {
     #GATEWAY="999.888.777.002"
     #DNS_SERVER="999.888.777.003"
 
-    chomp(my $seed1 = `echo 'IP="999.888.777.001"' | xxd -p`);
-    $seed1 = kill_0a($seed1);
-    chomp(my $seed2 = `echo 'GATEWAY="999.888.777.002"' | xxd -p`);
-    $seed2 = kill_0a($seed2);
-    chomp(my $seed3 = `echo 'DNS_SERVER="999.888.777.003"' | xxd -p`);
-    $seed3 = kill_0a($seed3);
+    my $seed1 = get_XXDs('IP="999.888.777.001"');
+    my $seed2 = get_XXDs('GATEWAY="999.888.777.002"');
+    my $seed3 = get_XXDs('DNS_SERVER="999.888.777.003"');
+
     my ($repl1ntp, $repl1smb, $repl2, $repl3);
     {
-        my $r;
+        my $r = pad_ip($ips{'NTP'}, 'IP'); # for test purpose
+        $repl1ntp = get_XXDs($r);
 
-        $r = &pad_ip($ips{'NTP'}, 'IP');
-        chomp($repl1ntp = `echo '$r' | xxd -p`);
-        $repl1ntp = kill_0a($repl1ntp);
-
-        $r = &pad_ip($ips{'SMB'}, 'IP');
-        chomp($repl1smb = `echo '$r' | xxd -p`);
-        $repl1smb = kill_0a($repl1smb);
-
-        $r = &pad_ip($ips{'GW'}, 'GATEWAY');
-        chomp($repl2 = `echo '$r' | xxd -p`);
-        $repl2 = kill_0a($repl2);
-
-        $r = &pad_ip($ips{'DNS'}, 'DNS_SERVER');
-        chomp($repl3 = `echo '$r' | xxd -p`);
-        $repl3 = kill_0a($repl3);
+        $repl1smb = get_XXDs(pad_ip($ips{'SMB'}, 'IP'));
+        $repl2 = get_XXDs(pad_ip($ips{'GW'}, 'GATEWAY'));
+        $repl3 = get_XXDs(pad_ip($ips{'DNS'}, 'DNS_SERVER'));
     }
 
     if ($ips{'EXT-NTP'} eq 'N') {
@@ -150,19 +115,16 @@ exit(0);
 sub pad_ip {
     my ($ip, $prefix) = @_;
 
-    my $ret = $prefix . sprintf('%-18s', '="' . $ip . '"');
-    # $ret =~ s/[ ]/#/g;
-
-    return $ret;
+    $prefix . sprintf('%-18s', '="' . $ip . '"');
 }
 
-sub kill_0a {
+sub get_XXDs {
     my ($str) = @_;
+    chomp($x_str = `echo '$str' | xxd -p`);
 
-    $str =~ s/^(.+)(0a)$/$1/;
-    # $str =~ s/23/20/g;
+    $x_str =~ s/^(.+)(0a)$/$1/;
 
-    return $str;
+    return $x_str;
 }
 
 sub register_VM {
@@ -187,7 +149,6 @@ sub register_VM {
     $name = $o[-1];
 
     push @body, "echo .configure ....";
-    #push @body, "prlctl set $name --device-add net";
     push @body, "prlctl set $name --device-set net0 --network $core_net";
     push @body, "prlctl set $name --autostart on";
     push @body, "";

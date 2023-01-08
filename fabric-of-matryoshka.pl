@@ -3,6 +3,7 @@ use strict;
 use warnings FATAL => 'all';
 
 use Data::Dumper;
+use Functions;
 
 chomp(my $home_path = `echo \$HOME`);
 my @body = ("#!/bin/bash\n");
