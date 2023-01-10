@@ -2,6 +2,8 @@
 use strict;
 use warnings FATAL => 'all';
 
+use lib '.';
+
 use Data::Dumper;
 use ext;
 
@@ -9,12 +11,11 @@ ext::checkOnCDROM;
 my $pwd = ext::pwd;
 
 my @body = ("#!/bin/bash\n");
+my $core_net = ext::core_network_name;
 my $filter ='';
-my $core_net = 'core-network';
 my $is_control_host = 0;
 
-chomp(my $home_path = `echo \$HOME`);
-my %ips = ext::loadAddresses($home_path . '/used-addresses');
+my %ips = ext::loadAddresses(ext::home_path . '/used-addresses');
 
 push @body, "echo .install host trial licence";
 push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
@@ -40,7 +41,7 @@ if (@sysc > 0) {
     push @lic, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
     push @lic, "";
     #
-    my $m_name = $home_path.'/install-storage-licence.sh';
+    my $m_name = ext::home_path.'/install-storage-licence.sh';
     {
         open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
         for my $str (@lic) {
@@ -67,7 +68,7 @@ push @body, "echo Use:";
 push @body, "echo .  chronyc sources -v";
 push @body, "";
 
-if ($is_control_host == 1) {
+if (1==1 || $is_control_host == 1) {
 
     #    123456789012345
     #IP="999.888.777.001"
@@ -78,18 +79,19 @@ if ($is_control_host == 1) {
     my $seed2 = get_XXDs('GATEWAY="999.888.777.002"');
     my $seed3 = get_XXDs('DNS_SERVER="999.888.777.003"');
 
-    my ($repl1ntp, $repl1smb, $repl2, $repl3);
+    my ($repl1ntp, $repl1smb, $repl1dns, $repl2, $repl3);
     {
         my $r = pad_ip($ips{'NTP'}, 'IP'); # for test purpose
         $repl1ntp = get_XXDs($r);
 
         $repl1smb = get_XXDs(pad_ip($ips{'SMB'}, 'IP'));
+        $repl1dns = get_XXDs(pad_ip($ips{'DNS'}, 'IP'));
         $repl2 = get_XXDs(pad_ip($ips{'GW'}, 'GATEWAY'));
         $repl3 = get_XXDs(pad_ip($ips{'DNS'}, 'DNS_SERVER'));
     }
 
     if ($ips{'EXT-NTP'} eq 'N') {
-        register_VM('/sitronics/srv-ntp', 'srv-ntp.tar.gz', 'NTP');
+        ext::register_VM('srv-ntp', 'local NTP', \@body);
         push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1ntp/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
         push @body, "rm harddisk.hdd";
         push @body, "mv harddisk.hdd.new harddisk.hdd";
@@ -98,7 +100,7 @@ if ($is_control_host == 1) {
     }
 
     if ($ips{'EXT-SMB'} eq 'N') {
-        register_VM('/sitronics/srv-smb', 'srv-smb.tar.gz', 'SMB');
+        ext::register_VM('srv-smb', 'local SMB', \@body);
         push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1smb/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
         push @body, "rm harddisk.hdd";
         push @body, "mv harddisk.hdd.new harddisk.hdd";
@@ -106,15 +108,16 @@ if ($is_control_host == 1) {
         push @body, "";
     }
 
-    # register_VM('/sitronics/srv-dns', 'srv-dns.tar.gz', 'DNS');
-    # push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1smb/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
-    # push @body, "rm harddisk.hdd";
-    # push @body, "mv harddisk.hdd.new harddisk.hdd";
-    # push @body, "prlctl start srv-dns";
-    # push @body, "";
+    ext::register_VM('srv-dns', 'local DNS');
+    push @body, qq[xxd -p harddisk.hdd | tr -d "\\n" | sed -e "s/$seed1/$repl1dns/" -e "s/$seed2/$repl2/" -e "s/$seed3/$repl3/" | xxd -p -r > harddisk.hdd.new ];
+    push @body, "rm harddisk.hdd";
+    push @body, "mv harddisk.hdd.new harddisk.hdd";
+    push @body, "prlctl start srv-dns";
+    # push @body, "here we must get SSH to server and make setup zones";
+    push @body, "";
 }
 
-my $m_name = $home_path.'/setup-host';
+my $m_name = ext::home_path.'/setup-host';
 {
     open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
     for my $str (@body) {
@@ -146,29 +149,3 @@ sub get_XXDs {
     return $x_str;
 }
 
-sub register_VM {
-    my ($path, $name, $desc) = @_;
-
-    push @body, "";
-    push @body, "echo .copy $desc server ....";
-    push @body, "mkdir -p $path ; chmod -R 700 $path ; chown -R root:root $path";
-    push @body, "rsync --progress $pwd/$name $path/";
-    push @body, "";
-
-    push @body, "echo .extract ....";
-    push @body, "cd $path";
-    push @body, "tar -xf $name";
-    push @body, "rm -f $name";
-    push @body, "";
-
-    push @body, "echo .register ....";
-    push @body, "prlctl register $path";
-
-    my @o = split "/", $path;
-    $name = $o[-1];
-
-    push @body, "echo .configure ....";
-    push @body, "prlctl set $name --device-set net0 --network $core_net";
-    push @body, "prlctl set $name --autostart on";
-    push @body, "";
-}

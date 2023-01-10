@@ -8,20 +8,22 @@ use Exporter 'import';
 our $VERSION = '1.00';
 our @EXPORT = qw[proceed_number_line proceed_num proceed_ip proceed_name proceed_gw proceed_yn];
 
-my $pwd;
-
 sub pwd {
-    if( !defined($pwd) ) {
-        chomp($pwd = `pwd`);
-    }
-
-    return $pwd;
+    chomp (my $ret=`pwd`);
+    return $ret;
 };
 
-sub checkOnCDROM {
-    &pwd;
+sub home_path {
+    chomp (my $ret = `echo \$HOME`);
+    return $ret;
+}
 
-    my $t_name = $pwd."/kjenvjkeneknffefjveee";
+sub core_network_name {
+    return 'core-network';
+}
+
+sub checkOnCDROM {
+    my $t_name = pwd."/kjenvjkeneknffefjveee";
     my $rez = ( open my $fh, ">", $t_name );
     if (defined($rez) && ($rez == 1)) {
         `rm -f $t_name`;
@@ -161,7 +163,7 @@ sub check_name {
     my ($line) = @_;
 
     my $good = $line =~ m/^[a-zA-Z0-9.-]+$/ ? 1 : 0;
-    if (!$good) {
+    if ($good == 0) {
         print 'NOT available empty value!'; print "\n";
     }
 
@@ -178,3 +180,38 @@ sub check_yN {
 
     return $good, \@lines;
 }
+
+sub register_VM {
+    my ($name, $desc, $body_ref, $add_net) = @_;
+
+    my @body = @{$body_ref};
+    my $path = '/sitronics/'.$name; #  'srv-ntp', 'srv-ntp.tar.gz'
+
+    push @body, "";
+    push @body, "echo .copy $desc server ....";
+    push @body, "mkdir -p $path ; chmod -R 700 $path ; chown -R root:root $path";
+    push @body, "rsync --progress ".pwd."/$name.tar.gz' $path/";
+    push @body, "";
+
+    push @body, "echo .extract ....";
+    push @body, "cd $path";
+    push @body, "tar -xf $name.tar.gz";
+    push @body, "rm -f $name.tar.gz";
+    push @body, "";
+
+    push @body, "echo .register ....";
+    push @body, "prlctl register $path";
+
+    push @body, "echo .configure ....";
+    if(defined $add_net) {
+        push @body, "prlctl set $name --device-add net";
+    }
+    push @body, "prlctl set $name --device-set net0 --network ".core_network_name;
+    push @body, "prlctl set $name --autostart on";
+    push @body, "";
+}
+
+
+#####################################################################
+1;
+

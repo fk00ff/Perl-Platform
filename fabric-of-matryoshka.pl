@@ -2,10 +2,11 @@
 use strict;
 use warnings FATAL => 'all';
 
+use lib '.';
+
 use Data::Dumper;
 use ext;
 
-chomp(my $home_path = `echo \$HOME`);
 my @body = ("#!/bin/bash\n");
 my $filter ='';
 
@@ -69,18 +70,20 @@ my @COPY_SMB = ext::input('Use external(existed) SMB/CIFS server [yN]:', proceed
 my @SMB_IP = ext::input('SMB IP:', proceed_ip);
 print "\n";
 my @DNS_IP = ext::input('DNS IP:', proceed_ip);
+my @DNS_UP = ext::input('Upstream DNS IP:', proceed_ip);
 my @DNS_DOMAIN = ext::input('Search Domain:', proceed_name);
+my @HOST_NAME = ext::input("This Host name:", proceed_name);
 print "\n";
-my @HOST_NAME = ext::input("Aaand this Host name:", proceed_name);
 
 print "\nsave answers ....\n";
-my $ans_name = $home_path . '/used-addresses';
+my $ans_name = ext::home_path . '/used-addresses';
 {
     open my $fh, ">", $ans_name or die "Can't write to file '$ans_name'";
     print $fh "VLAN=$LAN_VLAN[0]\n";
     print $fh "IP=$LAN_IP[0]\n";
     print $fh "GW=$LAN_IP[1]\n";
     print $fh "DNS=$DNS_IP[0]\n";
+    print $fh "DNS_UP=$DNS_UP[0]\n";
     print $fh "EXT-NTP=$COPY_NTP[0]\n";
     print $fh "NTP=$NTP_IP[0]\n";
     print $fh "EXT-SMB=$COPY_SMB[0]\n";
@@ -148,7 +151,7 @@ push @body, "";
 push @body, "ip -c -br a";
 push @body, "";
 
-my $m_name = $home_path.'/create-matryoshka';
+my $m_name = ext::home_path.'/create-matryoshka';
 {
     open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
     for my $str (@body) {
@@ -166,8 +169,8 @@ print "\n";
 exit(0);
 
 sub get_con_name {
-    my ($n) = @_;
-    my @columns = split " ", $interfaces[$n];
+    my ($num) = @_;
+    my @columns = split " ", $interfaces[$num];
     return $columns[0];
 }
 
