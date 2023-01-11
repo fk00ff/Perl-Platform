@@ -17,6 +17,10 @@ my $is_control_host = 0;
 
 my %ips = ext::loadAddresses(ext::home_path . '/used-addresses');
 
+push @body, "echo .install support packages";
+push @body, "rpm -i sshpass-1.06-1.rp7.x86_64.rpm";
+push @body, "rpm -i pv-1.4.6-1-el7.x86_64.rpm";
+
 push @body, "echo .install host trial licence";
 push @body, "vzlicload -f $pwd/license/RVZ.000000981.0002.txt";
 push @body, "";
@@ -41,10 +45,27 @@ if (@sysc > 0) {
     push @lic, "vstorage -c <claster-name> load-license -f $pwd/license/PCSS.000000100.0001.txt";
     push @lic, "";
     #
-    my $m_name = ext::home_path.'/install-storage-licence.sh';
+    my $m_name = ext::home_path.'/install-storage-licence';
     {
         open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
         for my $str (@lic) {
+            print $fh "$str\n";
+        }
+        close $fh;
+    }
+    #
+    `chmod +x $m_name`;
+
+    my @ssh = ("#!/bin/bash\n");
+    push @ssh, "echo .setup ssh key-login to minions";
+    push @ssh, "ssh-keygen -t rsa";
+    push @ssh, "#sshpass -p root ssh-copy-id -i /root/.ssh/id_rsa.pub root\@192.168.161.100";
+    push @ssh, "";
+    #
+    $m_name = ext::home_path.'/install-ssh-keys';
+    {
+        open my $fh, ">", $m_name or die "Can't write to file '$m_name'";
+        for my $str (@ssh) {
             print $fh "$str\n";
         }
         close $fh;
@@ -68,7 +89,7 @@ push @body, "echo Use:";
 push @body, "echo .  chronyc sources -v";
 push @body, "";
 
-if (1==1 || $is_control_host == 1) {
+if ($is_control_host == 1) {
 
     #    123456789012345
     #IP="999.888.777.001"

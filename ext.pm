@@ -195,7 +195,7 @@ sub register_VM {
 
     push @body, "echo .extract ....";
     push @body, "cd $path";
-    push @body, "tar -xf $name.tar.gz";
+    push @body, "pv $name.tar.gz | tar xz";
     push @body, "rm -f $name.tar.gz";
     push @body, "";
 

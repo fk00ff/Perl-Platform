@@ -26,6 +26,7 @@ my %ips = ext::loadAddresses(ext::home_path . '/used-addresses');
 
 my @PROXY_IP = ext::input('Internal web console IP:', proceed_ip);
 my @PORTAL_IP = ext::input('web console IP:', proceed_ip);
+my @ROOT_PASS = ext::input('root user password:', proceed_name); #need check characters set, may be need more check function
 
 my $name = "sit_vm_console";
 {
@@ -49,6 +50,7 @@ my $name = "sit_vm_console";
 
 fw_rule("va-mn", $PROXY_IP[0], 4648);
 fw_rule("vstorage-ui", $PROXY_IP[0], 8888);
+fw_rule("vstorage-ui", $PORTAL_IP[0], 8888);
 
 $name = "sit_vm_portal";
 {
@@ -64,10 +66,16 @@ $name = "sit_vm_portal";
 
     push @body, "Loading image ...";
     push @body, "prlctl exec $name docker load --input /mnt/cdrom/images.tar.gz";
-
     push @body, "prlctl exec $name mkdir /root/vmportal";
     push @body, "prlctl exec $name cp -R /mnt/cdrom/config /root/vmportal";
     push @body, "prlctl exec $name cp /mnt/cdrom/docker-compose.yml /root/vmportal";
+    push @body, "prlctl exec $name cp /mnt/cdrom/.env /root/vmportal";
+
+    push @body, qq[prlctl exec $name "echo IP_PORTAL=$PORTAL_IP[0] >> /root/vmportal/.env"];
+    push @body, qq[prlctl exec $name "echo DATA_STORAGE_API=http://$VSTOR_IP[0]:8888 >> /root/vmportal/.env"];
+    push @body, qq[prlctl exec $name "echo DATA_STORAGE_USER=root >> /root/vmportal/.env"];
+    push @body, qq[prlctl exec $name "echo DATA_STORAGE_PASSWORD=$ROOT_PASS[0] >> /root/vmportal/.env"];
+
     push @body, "prlctl exec $name cd /root/vmportal";
     push @body, "prlctl exec $name 'docker compose up -d'";
 
